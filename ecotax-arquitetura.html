@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoTax — Arquitetura do Sistema</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #080c10;
+    --surface: #0d1117;
+    --border: #1e2a38;
+    --accent: #00d4aa;
+    --accent2: #0088ff;
+    --accent3: #ff6b35;
+    --text: #e8f0fe;
+    --muted: #5a6a7a;
+    --glow: rgba(0, 212, 170, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 40px 24px;
+    overflow-x: hidden;
+  }
+
+  /* Grid de fundo */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  .logo {
+    font-size: 11px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 30%, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    margin-top: 10px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* Camadas */
+  .layer {
+    margin-bottom: 16px;
+    animation: fadeUp 0.6s ease both;
+  }
+  .layer:nth-child(1) { animation-delay: 0.1s; }
+  .layer:nth-child(2) { animation-delay: 0.2s; }
+  .layer:nth-child(3) { animation-delay: 0.3s; }
+  .layer:nth-child(4) { animation-delay: 0.4s; }
+  .layer:nth-child(5) { animation-delay: 0.5s; }
+
+  .layer-label {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    margin-bottom: 8px;
+    padding-left: 4px;
+  }
+
+  .layer-body {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: stretch;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .layer-body::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .layer--frontend .layer-body::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .layer--api .layer-body::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .layer--ai .layer-body::before { background: linear-gradient(90deg, #a78bfa, transparent); }
+  .layer--crawler .layer-body::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .layer--data .layer-body::before { background: linear-gradient(90deg, #fbbf24, transparent); }
+
+  /* Cards */
+  .card {
+    flex: 1;
+    min-width: 140px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    cursor: default;
+    position: relative;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+    background: var(--glow);
+    transform: translateY(-2px);
+  }
+
+  .card-icon {
+    font-size: 22px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .card-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .card-tag {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .tag--blue { background: rgba(0,136,255,0.15); color: var(--accent2); border: 1px solid rgba(0,136,255,0.3); }
+  .tag--green { background: rgba(0,212,170,0.12); color: var(--accent); border: 1px solid rgba(0,212,170,0.3); }
+  .tag--purple { background: rgba(167,139,250,0.12); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
+  .tag--orange { background: rgba(255,107,53,0.12); color: var(--accent3); border: 1px solid rgba(255,107,53,0.3); }
+  .tag--yellow { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+
+  /* Setas entre camadas */
+  .arrow {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 28px;
+    color: var(--muted);
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 2px;
+    gap: 8px;
+    position: relative;
+  }
+
+  .arrow::before, .arrow::after {
+    content: '';
+    height: 1px;
+    width: 60px;
+    background: linear-gradient(90deg, transparent, var(--border));
+  }
+  .arrow::after {
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* Fluxo principal destacado */
+  .flow-highlight {
+    background: rgba(0,212,170,0.05);
+    border: 1px dashed rgba(0,212,170,0.2);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 40px 0;
+    animation: fadeUp 0.7s 0.6s ease both;
+  }
+
+  .flow-title {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .flow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 100px;
+    flex: 1;
+  }
+
+  .flow-step-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    transition: all 0.3s;
+  }
+
+  .flow-step:hover .flow-step-icon {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--glow);
+  }
+
+  .flow-step-name {
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .flow-step-sub {
+    font-size: 9px;
+    color: var(--muted);
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .flow-arrow {
+    font-size: 16px;
+    color: var(--accent);
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+
+  /* Legenda */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 40px;
+    animation: fadeUp 0.7s 0.8s ease both;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Divisor */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0 32px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  /* NEGÓCIOS */
+  .biz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .biz-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+
+  .biz-card:hover { transform: translateY(-3px); }
+
+  .biz--saas { border-top: 2px solid var(--accent2); }
+  .biz--success { border-top: 2px solid #a78bfa; }
+  .biz--api { border-top: 2px solid var(--accent); }
+  .biz--wl { border-top: 2px solid var(--accent3); }
+
+  .biz-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .biz-icon { font-size: 28px; }
+
+  .biz-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .biz-sub {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 2px;
+  }
+
+  .biz-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 16px;
+  }
+
+  .biz-tiers {
+    display: flex;
+    gap: 8px;
+  }
+
+  .tier {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  .tier--mid { border-color: rgba(0,136,255,0.4); background: rgba(0,136,255,0.06); }
+  .tier--top { border-color: rgba(0,212,170,0.4); background: rgba(0,212,170,0.06); }
+
+  .tier-name {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 4px;
+  }
+
+  .tier-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .tier-price span { font-size: 10px; color: var(--muted); font-weight: 400; }
+
+  .tier-detail {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 4px;
+  }
+
+  .biz-highlight {
+    display: flex;
+    gap: 12px;
+  }
+
+  .biz-highlight-item {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .biz-highlight-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .biz--success .biz-highlight-val { color: #a78bfa; }
+  .biz--api .biz-highlight-val { color: var(--accent); }
+  .biz--wl .biz-highlight-val { color: var(--accent3); }
+
+  .biz-highlight-label {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 4px;
+  }
+
+  /* MRR */
+  .mrr-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .mrr-scenario { flex: 1; min-width: 260px; }
+
+  .mrr-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .mrr-desc {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 16px;
+  }
+
+  .mrr-bars { display: flex; flex-direction: column; gap: 10px; }
+
+  .mrr-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .mrr-row > span:first-child { width: 90px; flex-shrink: 0; }
+
+  .mrr-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .mrr-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+
+  .mrr-val { width: 80px; text-align: right; color: var(--text); flex-shrink: 0; }
+
+  .mrr-total {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .mrr-total strong { color: var(--accent); }
+
+  .mrr-divider {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+  }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: transform 0.3s;
+  }
+
+  .kpi-card:hover { transform: translateY(-2px); }
+
+  .kpi-icon { font-size: 24px; margin-bottom: 10px; }
+
+  .kpi-val {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .kpi-val span { font-size: 18px; font-weight: 400; color: var(--muted); }
+
+  .kpi-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  .kpi-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .kpi-fill {
+    height: 100%;
+    border-radius: 4px;
+  }
+
+  /* DASHBOARD MOCK */
+  .dash-wrapper {
+    background: #0a0f15;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,212,170,0.06);
+  }
+
+  .dash-topbar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 12px 20px;
+    background: #0d1117;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dash-logo {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .dash-nav { display: flex; gap: 4px; flex: 1; }
+
+  .dash-nav-item {
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    cursor: default;
+    transition: all 0.2s;
+  }
+
+  .dash-nav-item.active {
+    background: rgba(0,212,170,0.12);
+    color: var(--accent);
+  }
+
+  .dash-user {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    background: rgba(255,255,255,0.05);
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  .dash-body { display: flex; min-height: 420px; }
+
+  .dash-sidebar {
+    width: 180px;
+    flex-shrink: 0;
+    background: #0d1117;
+    border-right: 1px solid var(--border);
+    padding: 16px 12px;
+  }
+
+  .sidebar-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .sidebar-item {
+    font-size: 11px;
+    color: var(--muted);
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    cursor: default;
+    font-family: 'Space Mono', monospace;
+    transition: all 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sidebar-item.active {
+    background: rgba(0,212,170,0.1);
+    color: var(--accent);
+  }
+
+  .sidebar-add {
+    font-size: 11px;
+    color: var(--accent);
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px dashed rgba(0,212,170,0.3);
+    text-align: center;
+    margin-top: 10px;
+    font-family: 'Space Mono', monospace;
+    cursor: default;
+  }
+
+  .dash-main { flex: 1; padding: 16px; overflow: hidden; }
+
+  .dash-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .dash-stat {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+
+  .ds-val {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent2);
+  }
+
+  .ds-label {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 4px;
+  }
+
+  .dash-charts { display: flex; gap: 12px; }
+
+  .dash-chart-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    min-width: 0;
+  }
+
+  .chart-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Bar chart */
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+
+  .bc-row { display: flex; align-items: center; gap: 8px; }
+
+  .bc-label {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    width: 44px;
+    flex-shrink: 0;
+  }
+
+  .bc-wrap {
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .bc-bar { height: 100%; border-radius: 4px; }
+
+  .bc-val {
+    font-size: 10px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    width: 20px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* Line chart */
+  .line-chart-wrap { }
+
+  .line-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 4px;
+    padding: 0 2px;
+  }
+
+  .line-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .ll-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+  }
+
+  /* Alerts */
+  .alert-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .alert-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+
+  .alert-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .alert--red .alert-dot { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+  .alert--yellow .alert-dot { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; }
+  .alert--green .alert-dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+  .alert-item > div { flex: 1; min-width: 0; }
+
+  .alert-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .alert-sub {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-top: 2px;
+  }
+
+  .alert-badge {
+    font-size: 8px;
+    letter-spacing: 1px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  .alert--red .alert-badge { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+  .alert--yellow .alert-badge { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+  .alert--green .alert-badge { background: rgba(0,212,170,0.12); color: var(--accent); border: 1px solid rgba(0,212,170,0.3); }
+
+  /* Donut */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; }
+
+  .dl-item {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* DASHBOARD */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+
+  .kpi-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+  .kpi-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .kpi-delta {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .kpi-up { color: var(--accent); }
+  .kpi-down { color: #f87171; }
+  .kpi-neutral { color: var(--muted); }
+
+  /* Charts */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 16px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .chart-card--wide {
+    grid-column: 1 / -1;
+  }
+
+  .chart-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  .chart-sub {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-weight: 400;
+    margin-left: 8px;
+  }
+
+  /* Bar chart */
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+
+  .bar-group {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 120px;
+  }
+
+  .bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    height: 100%;
+  }
+
+  .bar-fill {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    transition: height 1s ease;
+    min-height: 4px;
+  }
+
+  .bar-label {
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .bar-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    border-top: 1px solid var(--border);
+    padding-top: 4px;
+  }
+
+  /* Donut */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .donut-svg { width: 120px; height: 120px; flex-shrink: 0; }
+
+  .donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .donut-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .donut-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Line chart */
+  .line-chart-wrap { display: flex; flex-direction: column; gap: 8px; }
+
+  .line-svg {
+    width: 100%;
+    height: 140px;
+    background: rgba(255,255,255,0.01);
+    border-radius: 6px;
+  }
+
+  .line-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    padding: 0 4px;
+  }
+
+  .line-legend {
+    display: flex;
+    gap: 20px;
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .line-legend i {
+    display: inline-block;
+    width: 20px;
+    height: 3px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">● EcoTax System</div>
+    <h1>Arquitetura do Sistema</h1>
+    <div class="subtitle">Plataforma B2B SaaS — Inteligência Tributária & Jurídica</div>
+  </div>
+
+  <!-- Fluxo Principal -->
+  <div class="flow-highlight">
+    <div class="flow-title">// fluxo principal de dados</div>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-step-icon">🌐</div>
+        <div class="flow-step-name">Crawler</div>
+        <div class="flow-step-sub">coleta leis</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-icon">🗄️</div>
+        <div class="flow-step-name">Banco</div>
+        <div class="flow-step-sub">armazena</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-icon">🤖</div>
+        <div class="flow-step-name">IA Analisa</div>
+        <div class="flow-step-sub">interpreta caso</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-icon">📁</div>
+        <div class="flow-step-name">Dossiê</div>
+        <div class="flow-step-sub">organiza por cliente</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-icon">⚖️</div>
+        <div class="flow-step-name">Parecer</div>
+        <div class="flow-step-sub">entrega ao jurídico</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camadas da Arquitetura -->
+  <div class="section-title">// camadas da arquitetura</div>
+
+  <!-- FRONTEND -->
+  <div class="layer layer--frontend">
+    <div class="layer-label">01 — Interface / Client</div>
+    <div class="layer-body">
+      <div class="card">
+        <span class="card-icon">🖥️</span>
+        <div class="card-title">Next.js App</div>
+        <div class="card-desc">Dashboard principal, roteamento e SSR de dados jurídicos</div>
+        <span class="card-tag tag--blue">Next.js 14</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">📁</span>
+        <div class="card-title">Workspace de Pastas</div>
+        <div class="card-desc">Sistema visual de dossiês com drag & drop por cliente/CNPJ</div>
+        <span class="card-tag tag--blue">dnd-kit</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">💬</span>
+        <div class="card-title">Chat de IA</div>
+        <div class="card-desc">Interface de análise contextualizada por pasta/caso ativo</div>
+        <span class="card-tag tag--blue">React + TanStack</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">📊</span>
+        <div class="card-title">Dashboards</div>
+        <div class="card-desc">Gráficos e KPIs: tributos, situações, créditos recuperados</div>
+        <span class="card-tag tag--blue">Recharts</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕ HTTP / REST</div>
+
+  <!-- API CORE .NET -->
+  <div class="layer layer--api">
+    <div class="layer-label">02 — API Core — ASP.NET Core (.NET 8)</div>
+    <div class="layer-body">
+      <div class="card">
+        <span class="card-icon">🏗️</span>
+        <div class="card-title">ASP.NET Core Web API</div>
+        <div class="card-desc">Roteamento principal, controllers, validação forte de payloads e rate limiting nativo</div>
+        <span class="card-tag tag--green">C# / .NET 8</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">🔐</span>
+        <div class="card-title">Identity + JWT</div>
+        <div class="card-desc">Autenticação robusta e RBAC: papéis Admin, Advogado e Contador</div>
+        <span class="card-tag tag--green">Identity Framework</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">🗂️</span>
+        <div class="card-title">Gestão de Pastas</div>
+        <div class="card-desc">CRUD de dossiês, itens e trilhas de evidência por tenant via EF Core</div>
+        <span class="card-tag tag--green">Entity Framework Core</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">🤝</span>
+        <div class="card-title">Semantic Kernel</div>
+        <div class="card-desc">Orquestra chamadas ao LLM e conecta o RAG diretamente do C#</div>
+        <span class="card-tag tag--green">Microsoft SK</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕ JSON / gRPC</div>
+
+  <!-- MICROSERVICE PYTHON -->
+  <div class="layer layer--crawler" style="margin-bottom:16px;">
+    <div class="layer-label">03 — Microserviço de IA & Crawler — Python (FastAPI)</div>
+    <div class="layer-body">
+      <div class="card">
+        <span class="card-icon">🕷️</span>
+        <div class="card-title">Scrapy Engine</div>
+        <div class="card-desc">Varre diários oficiais e portais gov, sanitiza e deduplicada via SHA-256</div>
+        <span class="card-tag tag--orange">Scrapy + bleach</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">⚖️</span>
+        <div class="card-title">DataJud / CNJ</div>
+        <div class="card-desc">Coleta jurisprudência e decisões via API oficial dos tribunais</div>
+        <span class="card-tag tag--orange">API CNJ</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">🔗</span>
+        <div class="card-title">LangChain / LangGraph</div>
+        <div class="card-desc">Orquestra agentes de IA, gerencia estado e RAG para análise tributária</div>
+        <span class="card-tag tag--orange">Python</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">📡</span>
+        <div class="card-title">FastAPI Gateway</div>
+        <div class="card-desc">Expõe endpoints internos para o .NET consumir via JSON ou gRPC</div>
+        <span class="card-tag tag--orange">FastAPI</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕ Chamadas internas</div>
+
+  <!-- IA -->
+  <div class="layer layer--ai">
+    <div class="layer-label">04 — Camada de Inteligência Artificial</div>
+    <div class="layer-body">
+      <div class="card">
+        <span class="card-icon">🧠</span>
+        <div class="card-title">Agente Tributário</div>
+        <div class="card-desc">Analisa o caso, identifica riscos e oportunidades com base nas leis coletadas</div>
+        <span class="card-tag tag--purple">GPT-4o-mini</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">🔍</span>
+        <div class="card-title">RAG por Pasta</div>
+        <div class="card-desc">A IA só lê os documentos daquele dossiê específico — contexto isolado</div>
+        <span class="card-tag tag--purple">Embeddings</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">📜</span>
+        <div class="card-title">Trilha de Evidências</div>
+        <div class="card-desc">Cada conclusão aponta a lei exata usada — zero alucinação jurídica</div>
+        <span class="card-tag tag--purple">Explainability</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">↕ Leitura / Escrita</div>
+
+  <!-- DATA -->
+  <div class="layer layer--data">
+    <div class="layer-label">05 — Camada de Dados</div>
+    <div class="layer-body">
+      <div class="card">
+        <span class="card-icon">🗃️</span>
+        <div class="card-title">PostgreSQL</div>
+        <div class="card-desc">Tenants, pastas, leis, chats, leads e logs LGPD com isolamento por CNPJ</div>
+        <span class="card-tag tag--yellow">Supabase</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">📦</span>
+        <div class="card-title">Object Storage</div>
+        <div class="card-desc">PDFs, documentos pesados e arquivos brutos do crawler</div>
+        <span class="card-tag tag--yellow">Cloudflare R2</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">🔢</span>
+        <div class="card-title">Vector Store</div>
+        <div class="card-desc">Embeddings dos documentos para busca semântica pelo RAG</div>
+        <span class="card-tag tag--yellow">pgvector</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- NEGÓCIOS -->
+  <div class="section-title">// modelo de negócios</div>
+
+  <!-- ICP -->
+  <div class="layer layer--frontend" style="animation-delay:0.1s">
+    <div class="layer-label">ICP — Público-alvo & Perfil de Cliente Ideal</div>
+    <div class="layer-body">
+      <div class="card">
+        <span class="card-icon">🏢</span>
+        <div class="card-title">Escritórios Contábeis</div>
+        <div class="card-desc">Contabilidades que atendem PMEs e precisam monitorar mudanças fiscais em volume. Dor: tempo gasto em pesquisa manual de legislação.</div>
+        <span class="card-tag tag--blue">Early Adopter</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">⚖️</span>
+        <div class="card-title">Advocacia Tributária</div>
+        <div class="card-desc">Advogados que trabalham com recuperação de crédito e teses tributárias. Dor: volume de jurisprudência impossível de acompanhar manualmente.</div>
+        <span class="card-tag tag--blue">Alto Ticket</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">🏭</span>
+        <div class="card-title">Empresas Diretas (PME)</div>
+        <div class="card-desc">Empresas dos setores de Varejo, Energia, Construção e Automotivo com passivos tributários relevantes e sem departamento jurídico próprio.</div>
+        <span class="card-tag tag--blue">Escala</span>
+      </div>
+      <div class="card">
+        <span class="card-icon">🏦</span>
+        <div class="card-title">Grandes Escritórios (White Label)</div>
+        <div class="card-desc">Bancas e consultorias que querem a tecnologia com a própria marca. Compram a plataforma completa para operar internamente.</div>
+        <span class="card-tag tag--blue">White Label</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:16px"></div>
+
+  <!-- MONETIZAÇÃO -->
+  <div class="section-title">// possibilidades de monetização</div>
+
+  <div class="biz-grid">
+
+    <div class="biz-card biz--saas">
+      <div class="biz-header">
+        <span class="biz-icon">📦</span>
+        <div>
+          <div class="biz-title">Assinatura SaaS</div>
+          <div class="biz-sub">Receita recorrente mensal (MRR)</div>
+        </div>
+      </div>
+      <div class="biz-desc">Planos escalonados por volume de CNPJs monitorados, usuários e consultas de IA. Ideal para contabilidades com carteira de clientes fixos.</div>
+      <div class="biz-tiers">
+        <div class="tier">
+          <div class="tier-name">Starter</div>
+          <div class="tier-price">R$ 297<span>/mês</span></div>
+          <div class="tier-detail">até 10 CNPJs · 1 usuário</div>
+        </div>
+        <div class="tier tier--mid">
+          <div class="tier-name">Pro</div>
+          <div class="tier-price">R$ 797<span>/mês</span></div>
+          <div class="tier-detail">até 50 CNPJs · 5 usuários</div>
+        </div>
+        <div class="tier tier--top">
+          <div class="tier-name">Enterprise</div>
+          <div class="tier-price">Sob consulta</div>
+          <div class="tier-detail">ilimitado · White Label</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="biz-card biz--success">
+      <div class="biz-header">
+        <span class="biz-icon">💰</span>
+        <div>
+          <div class="biz-title">Success Fee</div>
+          <div class="biz-sub">Taxa sobre crédito recuperado</div>
+        </div>
+      </div>
+      <div class="biz-desc">Para advocacia tributária: a plataforma identifica a oportunidade, o advogado executa, o EcoTax recebe uma % do valor recuperado. Alto ticket por operação.</div>
+      <div class="biz-highlight">
+        <div class="biz-highlight-item">
+          <div class="biz-highlight-val">5–15%</div>
+          <div class="biz-highlight-label">do crédito recuperado</div>
+        </div>
+        <div class="biz-highlight-item">
+          <div class="biz-highlight-val">R$ 50k+</div>
+          <div class="biz-highlight-label">ticket médio por caso</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="biz-card biz--api">
+      <div class="biz-header">
+        <span class="biz-icon">🔌</span>
+        <div>
+          <div class="biz-title">API por Consumo</div>
+          <div class="biz-sub">Pay-as-you-go</div>
+        </div>
+      </div>
+      <div class="biz-desc">Empresas e integradores que querem acessar a inteligência tributária do EcoTax via API — pagam por consulta, por análise gerada ou por documento processado.</div>
+      <div class="biz-highlight">
+        <div class="biz-highlight-item">
+          <div class="biz-highlight-val">R$ 0,50</div>
+          <div class="biz-highlight-label">por consulta de IA</div>
+        </div>
+        <div class="biz-highlight-item">
+          <div class="biz-highlight-val">R$ 2,00</div>
+          <div class="biz-highlight-label">por análise completa</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="biz-card biz--wl">
+      <div class="biz-header">
+        <span class="biz-icon">🏷️</span>
+        <div>
+          <div class="biz-title">White Label</div>
+          <div class="biz-sub">Licenciamento de plataforma</div>
+        </div>
+      </div>
+      <div class="biz-desc">Grandes bancas e consultorias licenciam a tecnologia completa com identidade visual própria. Receita de setup + royalties mensais sobre uso da plataforma.</div>
+      <div class="biz-highlight">
+        <div class="biz-highlight-item">
+          <div class="biz-highlight-val">R$ 15k+</div>
+          <div class="biz-highlight-label">setup inicial</div>
+        </div>
+        <div class="biz-highlight-item">
+          <div class="biz-highlight-val">R$ 3k+</div>
+          <div class="biz-highlight-label">royalty mensal</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="height:16px"></div>
+
+  <!-- PROJEÇÃO MRR -->
+  <div class="section-title">// projeção financeira — possibilidades</div>
+
+  <div class="mrr-block">
+    <div class="mrr-scenario">
+      <div class="mrr-label">Cenário Conservador</div>
+      <div class="mrr-desc">10 contabilidades no plano Pro + 2 casos de Success Fee/mês</div>
+      <div class="mrr-bars">
+        <div class="mrr-row">
+          <span>SaaS (10x Pro)</span>
+          <div class="mrr-bar-wrap"><div class="mrr-bar" style="width:45%;background:var(--accent2)"></div></div>
+          <span class="mrr-val">R$ 7.970</span>
+        </div>
+        <div class="mrr-row">
+          <span>Success Fee</span>
+          <div class="mrr-bar-wrap"><div class="mrr-bar" style="width:55%;background:#a78bfa"></div></div>
+          <span class="mrr-val">~R$ 10.000</span>
+        </div>
+      </div>
+      <div class="mrr-total">Total estimado: <strong>~R$ 18.000/mês</strong></div>
+    </div>
+
+    <div class="mrr-divider"></div>
+
+    <div class="mrr-scenario">
+      <div class="mrr-label">Cenário Otimista</div>
+      <div class="mrr-desc">30 clientes SaaS + 5 casos Success Fee + 1 White Label</div>
+      <div class="mrr-bars">
+        <div class="mrr-row">
+          <span>SaaS (mix)</span>
+          <div class="mrr-bar-wrap"><div class="mrr-bar" style="width:40%;background:var(--accent2)"></div></div>
+          <span class="mrr-val">R$ 20.000</span>
+        </div>
+        <div class="mrr-row">
+          <span>Success Fee</span>
+          <div class="mrr-bar-wrap"><div class="mrr-bar" style="width:65%;background:#a78bfa"></div></div>
+          <span class="mrr-val">~R$ 35.000</span>
+        </div>
+        <div class="mrr-row">
+          <span>White Label</span>
+          <div class="mrr-bar-wrap"><div class="mrr-bar" style="width:20%;background:var(--accent3)"></div></div>
+          <span class="mrr-val">R$ 6.000</span>
+        </div>
+      </div>
+      <div class="mrr-total">Total estimado: <strong>~R$ 61.000/mês</strong></div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- DASHBOARD -->
+  <div class="section-title">// dashboard — visão de dados</div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Casos Ativos</div>
+      <div class="kpi-value">128</div>
+      <div class="kpi-delta kpi-up">↑ +12 este mês</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Crédito Identificado</div>
+      <div class="kpi-value">R$ 4,2M</div>
+      <div class="kpi-delta kpi-up">↑ +R$ 800k</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Leis Monitoradas</div>
+      <div class="kpi-value">3.841</div>
+      <div class="kpi-delta kpi-up">↑ +241 novas</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Clientes Ativos</div>
+      <div class="kpi-value">47</div>
+      <div class="kpi-delta kpi-up">↑ +5 este mês</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">MRR Atual</div>
+      <div class="kpi-value">R$ 31k</div>
+      <div class="kpi-delta kpi-up">↑ +18%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Análises de IA</div>
+      <div class="kpi-value">2.094</div>
+      <div class="kpi-delta kpi-neutral">→ estável</div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-grid">
+
+    <!-- Gráfico de barras: MRR por mês -->
+    <div class="chart-card">
+      <div class="chart-title">Crescimento de MRR <span class="chart-sub">últimos 8 meses</span></div>
+      <div class="bar-chart">
+        <div class="bar-group">
+          <div class="bar-col">
+            <div class="bar-fill" style="height:28%;background:var(--accent2)"></div>
+            <div class="bar-label">Out</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-fill" style="height:35%;background:var(--accent2)"></div>
+            <div class="bar-label">Nov</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-fill" style="height:42%;background:var(--accent2)"></div>
+            <div class="bar-label">Dez</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-fill" style="height:48%;background:var(--accent2)"></div>
+            <div class="bar-label">Jan</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-fill" style="height:55%;background:var(--accent2)"></div>
+            <div class="bar-label">Fev</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-fill" style="height:63%;background:var(--accent2)"></div>
+            <div class="bar-label">Mar</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-fill" style="height:74%;background:var(--accent2)"></div>
+            <div class="bar-label">Abr</div>
+          </div>
+          <div class="bar-col">
+            <div class="bar-fill" style="height:90%;background:var(--accent)"></div>
+            <div class="bar-label">Mai</div>
+          </div>
+        </div>
+        <div class="bar-axis">
+          <span>R$ 0</span><span>R$ 15k</span><span>R$ 30k</span><span>R$ 61k</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfico donut: Distribuição de receita -->
+    <div class="chart-card">
+      <div class="chart-title">Receita por Modelo <span class="chart-sub">distribuição atual</span></div>
+      <div class="donut-wrap">
+        <svg viewBox="0 0 120 120" class="donut-svg">
+          <!-- SaaS 45% -->
+          <circle cx="60" cy="60" r="45" fill="none" stroke="var(--accent2)" stroke-width="18"
+            stroke-dasharray="127 156" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+          <!-- Success Fee 35% -->
+          <circle cx="60" cy="60" r="45" fill="none" stroke="#a78bfa" stroke-width="18"
+            stroke-dasharray="99 184" stroke-dashoffset="-127" transform="rotate(-90 60 60)"/>
+          <!-- API 12% -->
+          <circle cx="60" cy="60" r="45" fill="none" stroke="var(--accent)" stroke-width="18"
+            stroke-dasharray="34 249" stroke-dashoffset="-226" transform="rotate(-90 60 60)"/>
+          <!-- White Label 8% -->
+          <circle cx="60" cy="60" r="45" fill="none" stroke="var(--accent3)" stroke-width="18"
+            stroke-dasharray="23 260" stroke-dashoffset="-260" transform="rotate(-90 60 60)"/>
+          <text x="60" y="56" text-anchor="middle" fill="white" font-size="11" font-weight="bold" font-family="Syne">MRR</text>
+          <text x="60" y="68" text-anchor="middle" fill="#5a6a7a" font-size="7" font-family="Space Mono">R$ 31k</text>
+        </svg>
+        <div class="donut-legend">
+          <div class="donut-item"><span class="donut-dot" style="background:var(--accent2)"></span>SaaS — 45%</div>
+          <div class="donut-item"><span class="donut-dot" style="background:#a78bfa"></span>Success Fee — 35%</div>
+          <div class="donut-item"><span class="donut-dot" style="background:var(--accent)"></span>API — 12%</div>
+          <div class="donut-item"><span class="donut-dot" style="background:var(--accent3)"></span>White Label — 8%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfico de linha: Casos por tipo de tributo -->
+    <div class="chart-card chart-card--wide">
+      <div class="chart-title">Casos por Tipo de Tributo <span class="chart-sub">volume acumulado</span></div>
+      <div class="line-chart-wrap">
+        <svg viewBox="0 0 500 140" class="line-svg" preserveAspectRatio="none">
+          <!-- Grid lines -->
+          <line x1="0" y1="35" x2="500" y2="35" stroke="#1e2a38" stroke-width="1"/>
+          <line x1="0" y1="70" x2="500" y2="70" stroke="#1e2a38" stroke-width="1"/>
+          <line x1="0" y1="105" x2="500" y2="105" stroke="#1e2a38" stroke-width="1"/>
+          <!-- ICMS line -->
+          <polyline points="0,110 70,95 140,80 210,65 280,50 350,38 420,28 500,18"
+            fill="none" stroke="var(--accent2)" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- PIS/COFINS line -->
+          <polyline points="0,120 70,112 140,100 210,90 280,78 350,68 420,58 500,48"
+            fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- IRPJ/CSLL line -->
+          <polyline points="0,128 70,122 140,116 210,108 280,100 350,92 420,82 500,72"
+            fill="none" stroke="var(--accent3)" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- Area fills -->
+          <polyline points="0,110 70,95 140,80 210,65 280,50 350,38 420,28 500,18 500,140 0,140"
+            fill="url(#grad-blue)" opacity="0.15"/>
+          <defs>
+            <linearGradient id="grad-blue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0088ff"/>
+              <stop offset="100%" stop-color="transparent"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="line-labels">
+          <span>Out</span><span>Nov</span><span>Dez</span><span>Jan</span>
+          <span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span>
+        </div>
+        <div class="line-legend">
+          <span><i style="background:var(--accent2)"></i>ICMS</span>
+          <span><i style="background:#a78bfa"></i>PIS/COFINS</span>
+          <span><i style="background:var(--accent3)"></i>IRPJ/CSLL</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="divider">
+
+  <!-- DASHBOARD PREVIEW -->
+  <div class="section-title">// proposta da solução — dashboard & impacto</div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon">⚡</div>
+      <div class="kpi-val" data-target="94">0<span>%</span></div>
+      <div class="kpi-label">Redução de tempo em pesquisa manual de legislação</div>
+      <div class="kpi-bar"><div class="kpi-fill" style="width:94%;background:var(--accent)"></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">🎯</div>
+      <div class="kpi-val" data-target="87">0<span>%</span></div>
+      <div class="kpi-label">Precisão média na identificação de oportunidades tributárias</div>
+      <div class="kpi-bar"><div class="kpi-fill" style="width:87%;background:var(--accent2)"></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">📂</div>
+      <div class="kpi-val" data-target="3">0<span>x</span></div>
+      <div class="kpi-label">mais casos analisados por advogado por mês vs. processo manual</div>
+      <div class="kpi-bar"><div class="kpi-fill" style="width:75%;background:#a78bfa"></div></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon">💸</div>
+      <div class="kpi-val" data-target="12">0<span>min</span></div>
+      <div class="kpi-label">Tempo médio para gerar um parecer completo com trilha de evidências</div>
+      <div class="kpi-bar"><div class="kpi-fill" style="width:60%;background:var(--accent3)"></div></div>
+    </div>
+  </div>
+
+  <div style="height:24px"></div>
+
+  <!-- MOCK DASHBOARD -->
+  <div class="dash-wrapper">
+    <div class="dash-topbar">
+      <div class="dash-logo">● EcoTax</div>
+      <div class="dash-nav">
+        <span class="dash-nav-item active">Dashboard</span>
+        <span class="dash-nav-item">Dossiês</span>
+        <span class="dash-nav-item">Legislação</span>
+        <span class="dash-nav-item">IA Chat</span>
+      </div>
+      <div class="dash-user">JD ▾</div>
+    </div>
+
+    <div class="dash-body">
+
+      <!-- Sidebar -->
+      <div class="dash-sidebar">
+        <div class="sidebar-label">PASTAS ATIVAS</div>
+        <div class="sidebar-item active">📁 Caso ICMS SP #041</div>
+        <div class="sidebar-item">📁 PIS/COFINS Varejo</div>
+        <div class="sidebar-item">📁 Recuperação ISS</div>
+        <div class="sidebar-item">📁 Tese IRPJ 2024</div>
+        <div class="sidebar-item">📁 Cliente: Alfa S.A.</div>
+        <div class="sidebar-add">+ Nova pasta</div>
+      </div>
+
+      <!-- Main -->
+      <div class="dash-main">
+
+        <!-- Row 1: Stats -->
+        <div class="dash-stats">
+          <div class="dash-stat">
+            <div class="ds-val">142</div>
+            <div class="ds-label">Leis monitoradas</div>
+          </div>
+          <div class="dash-stat">
+            <div class="ds-val" style="color:#a78bfa">38</div>
+            <div class="ds-label">Casos em análise</div>
+          </div>
+          <div class="dash-stat">
+            <div class="ds-val" style="color:var(--accent3)">7</div>
+            <div class="ds-label">Alertas críticos</div>
+          </div>
+          <div class="dash-stat">
+            <div class="ds-val" style="color:var(--accent)">R$2.4M</div>
+            <div class="ds-label">Crédito identificado</div>
+          </div>
+        </div>
+
+        <!-- Row 2: Charts -->
+        <div class="dash-charts">
+
+          <!-- Bar chart: Oportunidades por tributo -->
+          <div class="dash-chart-card" style="flex:1.4">
+            <div class="chart-title">Oportunidades por Tipo de Tributo</div>
+            <div class="bar-chart">
+              <div class="bc-row">
+                <span class="bc-label">ICMS</span>
+                <div class="bc-wrap"><div class="bc-bar" style="width:82%;background:var(--accent)"></div></div>
+                <span class="bc-val">41</span>
+              </div>
+              <div class="bc-row">
+                <span class="bc-label">PIS/COF</span>
+                <div class="bc-wrap"><div class="bc-bar" style="width:60%;background:var(--accent2)"></div></div>
+                <span class="bc-val">30</span>
+              </div>
+              <div class="bc-row">
+                <span class="bc-label">ISS</span>
+                <div class="bc-wrap"><div class="bc-bar" style="width:42%;background:#a78bfa"></div></div>
+                <span class="bc-val">21</span>
+              </div>
+              <div class="bc-row">
+                <span class="bc-label">IRPJ</span>
+                <div class="bc-wrap"><div class="bc-bar" style="width:28%;background:var(--accent3)"></div></div>
+                <span class="bc-val">14</span>
+              </div>
+              <div class="bc-row">
+                <span class="bc-label">CSLL</span>
+                <div class="bc-wrap"><div class="bc-bar" style="width:18%;background:#fbbf24"></div></div>
+                <span class="bc-val">9</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Line chart: Crescimento MRR -->
+          <div class="dash-chart-card" style="flex:1.6">
+            <div class="chart-title">Crédito Recuperado — Últimos 6 meses (R$)</div>
+            <div class="line-chart-wrap">
+              <svg viewBox="0 0 320 120" preserveAspectRatio="none" style="width:100%;height:110px">
+                <defs>
+                  <linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#00d4aa" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="#00d4aa" stop-opacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#0088ff" stop-opacity="0.2"/>
+                    <stop offset="100%" stop-color="#0088ff" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <!-- Grid lines -->
+                <line x1="0" y1="30" x2="320" y2="30" stroke="#1e2a38" stroke-width="1"/>
+                <line x1="0" y1="60" x2="320" y2="60" stroke="#1e2a38" stroke-width="1"/>
+                <line x1="0" y1="90" x2="320" y2="90" stroke="#1e2a38" stroke-width="1"/>
+                <!-- Area fill EcoTax -->
+                <path d="M0,95 L53,80 L106,65 L160,45 L213,30 L267,18 L320,8 L320,120 L0,120 Z" fill="url(#lg1)"/>
+                <!-- Line EcoTax -->
+                <polyline points="0,95 53,80 106,65 160,45 213,30 267,18 320,8" fill="none" stroke="#00d4aa" stroke-width="2.5" stroke-linejoin="round"/>
+                <!-- Area fill manual -->
+                <path d="M0,100 L53,98 L106,96 L160,94 L213,92 L267,90 L320,88 L320,120 L0,120 Z" fill="url(#lg2)"/>
+                <!-- Line manual -->
+                <polyline points="0,100 53,98 106,96 160,94 213,92 267,90 320,88" fill="none" stroke="#0088ff" stroke-width="1.5" stroke-dasharray="5,4" stroke-linejoin="round"/>
+                <!-- Dots EcoTax -->
+                <circle cx="0" cy="95" r="3" fill="#00d4aa"/>
+                <circle cx="53" cy="80" r="3" fill="#00d4aa"/>
+                <circle cx="106" cy="65" r="3" fill="#00d4aa"/>
+                <circle cx="160" cy="45" r="3" fill="#00d4aa"/>
+                <circle cx="213" cy="30" r="3" fill="#00d4aa"/>
+                <circle cx="267" cy="18" r="3" fill="#00d4aa"/>
+                <circle cx="320" cy="8" r="4" fill="#00d4aa" stroke="#080c10" stroke-width="2"/>
+              </svg>
+              <div class="line-labels">
+                <span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span><span>Jul</span>
+              </div>
+              <div class="line-legend">
+                <span><span class="ll-dot" style="background:var(--accent)"></span>Com EcoTax</span>
+                <span><span class="ll-dot" style="background:var(--accent2);opacity:0.6"></span>Processo manual</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Row 3: Alerts + Donut -->
+        <div class="dash-charts" style="margin-top:12px">
+
+          <!-- Alertas -->
+          <div class="dash-chart-card" style="flex:1.5">
+            <div class="chart-title">Alertas Recentes da IA</div>
+            <div class="alert-list">
+              <div class="alert-item alert--red">
+                <span class="alert-dot"></span>
+                <div>
+                  <div class="alert-title">Alteração ICMS-ST — SP</div>
+                  <div class="alert-sub">Publicado hoje · Impacto: Alto · 3 dossiês afetados</div>
+                </div>
+                <span class="alert-badge">CRÍTICO</span>
+              </div>
+              <div class="alert-item alert--yellow">
+                <span class="alert-dot"></span>
+                <div>
+                  <div class="alert-title">Nova jurisprudência PIS — TRF4</div>
+                  <div class="alert-sub">Há 2 dias · Favorável ao contribuinte</div>
+                </div>
+                <span class="alert-badge">ATENÇÃO</span>
+              </div>
+              <div class="alert-item alert--green">
+                <span class="alert-dot"></span>
+                <div>
+                  <div class="alert-title">Oportunidade ISS identificada</div>
+                  <div class="alert-sub">Caso #038 · Crédito estimado: R$180k</div>
+                </div>
+                <span class="alert-badge">NOVO</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Donut -->
+          <div class="dash-chart-card" style="flex:1">
+            <div class="chart-title">Status dos Casos</div>
+            <div class="donut-wrap">
+              <svg viewBox="0 0 120 120" width="120" height="120">
+                <!-- Em análise 38% -->
+                <circle cx="60" cy="60" r="45" fill="none" stroke="#1e2a38" stroke-width="18"/>
+                <circle cx="60" cy="60" r="45" fill="none" stroke="#00d4aa" stroke-width="18"
+                  stroke-dasharray="107 175" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+                <circle cx="60" cy="60" r="45" fill="none" stroke="#0088ff" stroke-width="18"
+                  stroke-dasharray="70 212" stroke-dashoffset="-107" transform="rotate(-90 60 60)"/>
+                <circle cx="60" cy="60" r="45" fill="none" stroke="#a78bfa" stroke-width="18"
+                  stroke-dasharray="40 242" stroke-dashoffset="-177" transform="rotate(-90 60 60)"/>
+                <circle cx="60" cy="60" r="45" fill="none" stroke="#ff6b35" stroke-width="18"
+                  stroke-dasharray="65 217" stroke-dashoffset="-217" transform="rotate(-90 60 60)"/>
+                <text x="60" y="56" text-anchor="middle" fill="#e8f0fe" font-size="14" font-weight="bold" font-family="Syne">38</text>
+                <text x="60" y="68" text-anchor="middle" fill="#5a6a7a" font-size="7" font-family="Space Mono">casos</text>
+              </svg>
+              <div class="donut-legend">
+                <div class="dl-item"><span class="ll-dot" style="background:var(--accent)"></span>Concluídos 38%</div>
+                <div class="dl-item"><span class="ll-dot" style="background:var(--accent2)"></span>Em análise 25%</div>
+                <div class="dl-item"><span class="ll-dot" style="background:#a78bfa"></span>Aguardando 15%</div>
+                <div class="dl-item"><span class="ll-dot" style="background:var(--accent3)"></span>Críticos 22%</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:16px"></div>
+  <div style="text-align:center;font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:2px;">
+    ↑ MOCKUP DO DASHBOARD — INTERFACE REAL DO ECOTAX
+  </div>
+
+
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#0088ff"></div>
+      Frontend — Next.js + TypeScript
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#00d4aa"></div>
+      API Core — ASP.NET Core C#
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#ff6b35"></div>
+      Microserviço — Python (IA + Crawler)
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#a78bfa"></div>
+      IA — LLM + RAG + Semantic Kernel
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#fbbf24"></div>
+      Dados — PostgreSQL + EF Core + R2
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
