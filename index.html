@@ -465,6 +465,198 @@
     margin-top: 4px;
   }
 
+  /* TOKEN MODEL */
+  .token-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 760px) {
+    .token-section { grid-template-columns: 1fr; }
+  }
+
+  .token-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .token-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+
+  .token-card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .token-card-sub {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 16px;
+  }
+
+  .token-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+  }
+
+  .token-table th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 400;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 8px 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .token-table th:not(:first-child),
+  .token-table td:not(:first-child) {
+    text-align: right;
+  }
+
+  .token-table td {
+    padding: 10px 8px;
+    color: var(--text);
+    border-bottom: 1px solid rgba(30,42,56,0.5);
+  }
+
+  .token-table tr:last-child td { border-bottom: none; }
+
+  .token-table tr:hover td { background: rgba(0,212,170,0.04); }
+
+  .token-table .tk-input { color: var(--accent2); }
+  .token-table .tk-output { color: var(--accent); }
+  .token-table .tk-cost { color: var(--accent); font-weight: 700; }
+  .token-table .tk-label { color: var(--text); font-weight: 600; }
+
+  .token-note {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    line-height: 1.6;
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: rgba(251,191,36,0.05);
+    border-left: 2px solid #fbbf24;
+    border-radius: 4px;
+  }
+
+  /* PACOTES */
+  .pack-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 900px) {
+    .pack-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .pack-grid { grid-template-columns: 1fr; }
+  }
+
+  .pack-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 16px;
+    position: relative;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+
+  .pack-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+  }
+
+  .pack-card--featured {
+    border-color: rgba(0,212,170,0.5);
+    background: linear-gradient(180deg, rgba(0,212,170,0.06), var(--surface));
+  }
+
+  .pack-badge {
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    font-size: 8px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-family: 'Space Mono', monospace;
+    background: var(--accent);
+    color: var(--bg);
+    font-weight: 700;
+  }
+
+  .pack-name {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .pack-price {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .pack-discount {
+    display: inline-block;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 14px;
+    padding: 2px 6px;
+    background: rgba(0,212,170,0.1);
+    border-radius: 4px;
+  }
+
+  .pack-tokens {
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .pack-token-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .pack-token-row .ptr-label { color: var(--muted); }
+  .pack-token-row .ptr-val { color: var(--text); font-weight: 700; }
+
   /* MRR */
   .mrr-block {
     background: var(--surface);
@@ -1353,21 +1545,21 @@
 
     <div class="biz-card biz--api">
       <div class="biz-header">
-        <span class="biz-icon">🔌</span>
+        <span class="biz-icon">⚡</span>
         <div>
-          <div class="biz-title">API por Consumo</div>
-          <div class="biz-sub">Pay-as-you-go</div>
+          <div class="biz-title">Cobrança por Token</div>
+          <div class="biz-sub">Token-based pricing</div>
         </div>
       </div>
-      <div class="biz-desc">Empresas e integradores que querem acessar a inteligência tributária do EcoTax via API — pagam por consulta, por análise gerada ou por documento processado.</div>
+      <div class="biz-desc">Cobrança proporcional ao consumo real da IA tributária — input (documentos, contexto, leis) e output (parecer, análise, resposta). Margem fixa de ~98% sobre custo de API, blindando o EcoTax independente da complexidade do caso.</div>
       <div class="biz-highlight">
         <div class="biz-highlight-item">
-          <div class="biz-highlight-val">R$ 0,50</div>
-          <div class="biz-highlight-label">por consulta de IA</div>
+          <div class="biz-highlight-val">R$ 49</div>
+          <div class="biz-highlight-label">por 1M tokens input</div>
         </div>
         <div class="biz-highlight-item">
-          <div class="biz-highlight-val">R$ 2,00</div>
-          <div class="biz-highlight-label">por análise completa</div>
+          <div class="biz-highlight-val">R$ 245</div>
+          <div class="biz-highlight-label">por 1M tokens output</div>
         </div>
       </div>
     </div>
@@ -1389,6 +1581,165 @@
         <div class="biz-highlight-item">
           <div class="biz-highlight-val">R$ 3k+</div>
           <div class="biz-highlight-label">royalty mensal</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="height:16px"></div>
+
+  <!-- MODELO DE TOKENS -->
+  <div class="section-title">// modelo de tokens — preços, pacotes & consumo estimado</div>
+
+  <div class="token-section">
+
+    <!-- Preços base -->
+    <div class="token-card">
+      <div class="token-card-title">⚡ Preços base por token</div>
+      <div class="token-card-sub">Cobrança proporcional ao uso real da IA. Markup fixo sobre custo de API.</div>
+      <table class="token-table">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>1M tokens</th>
+            <th>1K tokens</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tk-input">Input (entrada)</td>
+            <td>R$ 49,00</td>
+            <td>R$ 0,049</td>
+          </tr>
+          <tr>
+            <td class="tk-output">Output (saída)</td>
+            <td>R$ 245,00</td>
+            <td>R$ 0,245</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="token-note">
+        <strong style="color:var(--accent)">Input</strong> = texto enviado (documentos, contexto, lei). <strong style="color:var(--accent)">Output</strong> = texto gerado (parecer, análise, resposta). Saldo consultável em tempo real no dashboard — tokens não expiram.
+      </div>
+    </div>
+
+    <!-- Estimativas por operação -->
+    <div class="token-card">
+      <div class="token-card-title">📊 Estimativa de consumo por operação</div>
+      <div class="token-card-sub">Referência média — consumo real pode variar conforme complexidade do contexto.</div>
+      <table class="token-table">
+        <thead>
+          <tr>
+            <th>Operação</th>
+            <th>Input</th>
+            <th>Output</th>
+            <th>Custo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tk-label">Triagem de documento</td>
+            <td>2K</td>
+            <td>0,3K</td>
+            <td class="tk-cost">R$ 0,17</td>
+          </tr>
+          <tr>
+            <td class="tk-label">Chat sobre dossiê</td>
+            <td>8K</td>
+            <td>1K</td>
+            <td class="tk-cost">R$ 0,64</td>
+          </tr>
+          <tr>
+            <td class="tk-label">Análise tributária (1 CNPJ)</td>
+            <td>40K</td>
+            <td>5K</td>
+            <td class="tk-cost">R$ 3,18</td>
+          </tr>
+          <tr>
+            <td class="tk-label">Parecer + trilha evidências</td>
+            <td>80K</td>
+            <td>15K</td>
+            <td class="tk-cost">R$ 7,59</td>
+          </tr>
+          <tr>
+            <td class="tk-label">Tese tributária completa</td>
+            <td>200K</td>
+            <td>40K</td>
+            <td class="tk-cost">R$ 19,60</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- PACOTES PRÉ-PAGOS -->
+  <div class="section-title" style="margin-top:8px">// pacotes pré-pagos — desconto progressivo</div>
+
+  <div class="pack-grid">
+
+    <div class="pack-card">
+      <div class="pack-name">Starter</div>
+      <div class="pack-price">R$ 44,90</div>
+      <div class="pack-discount">sem desconto</div>
+      <div class="pack-tokens">
+        <div class="pack-token-row">
+          <span class="ptr-label">Input</span>
+          <span class="ptr-val">500K tokens</span>
+        </div>
+        <div class="pack-token-row">
+          <span class="ptr-label">Output</span>
+          <span class="ptr-val">100K tokens</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pack-card pack-card--featured">
+      <span class="pack-badge">Recomendado</span>
+      <div class="pack-name">Pro</div>
+      <div class="pack-price">R$ 419,00</div>
+      <div class="pack-discount">−15%</div>
+      <div class="pack-tokens">
+        <div class="pack-token-row">
+          <span class="ptr-label">Input</span>
+          <span class="ptr-val">5M tokens</span>
+        </div>
+        <div class="pack-token-row">
+          <span class="ptr-label">Output</span>
+          <span class="ptr-val">1M tokens</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pack-card">
+      <div class="pack-name">Scale</div>
+      <div class="pack-price">R$ 1.799,00</div>
+      <div class="pack-discount">−25%</div>
+      <div class="pack-tokens">
+        <div class="pack-token-row">
+          <span class="ptr-label">Input</span>
+          <span class="ptr-val">25M tokens</span>
+        </div>
+        <div class="pack-token-row">
+          <span class="ptr-label">Output</span>
+          <span class="ptr-val">5M tokens</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="pack-card">
+      <div class="pack-name">Enterprise</div>
+      <div class="pack-price">R$ 5.999,00</div>
+      <div class="pack-discount">−35%</div>
+      <div class="pack-tokens">
+        <div class="pack-token-row">
+          <span class="ptr-label">Input</span>
+          <span class="ptr-val">100M tokens</span>
+        </div>
+        <div class="pack-token-row">
+          <span class="ptr-label">Output</span>
+          <span class="ptr-val">20M tokens</span>
         </div>
       </div>
     </div>
